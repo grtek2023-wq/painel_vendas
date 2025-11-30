@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste API Manus</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #00ff00;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #00ff00;
+      background: #0a0a0a;
+    }
+    button {
+      background: #00ff00;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .error { color: #ff0000; }
+    .success { color: #00ff00; }
+    .info { color: #00aaff; }
+    pre {
+      background: #000;
+      padding: 10px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Diagnóstico API Manus</h1>
+
+  <div class="section">
+    <h2>1️⃣ Variáveis de Ambiente</h2>
+    <button onclick="checkEnvVars()">Verificar Variáveis</button>
+    <pre id="env-result"></pre>
+  </div>
+
+  <div class="section">
+    <h2>2️⃣ Teste GET /services</h2>
+    <button onclick="testServices()">Testar /services</button>
+    <pre id="services-result"></pre>
+  </div>
+
+  <div class="section">
+    <h2>3️⃣ Teste GET /countries</h2>
+    <button onclick="testCountries()">Testar /countries</button>
+    <pre id="countries-result"></pre>
+  </div>
+
+  <div class="section">
+    <h2>4️⃣ Teste Completo</h2>
+    <button onclick="testAll()">Testar Tudo</button>
+  </div>
+
+  <script type="module">
+    const API_URL = 'https://3000-ihuuejdziqv19sb4gds2u-9dfceebb.manusvm.computer/api/public';
+    const API_KEY = 'sk_POJaRN9YTPKfZaUQ4P9LQW-H3FI68F5abjtECApweI2iFukh';
+
+    window.checkEnvVars = function() {
+      const result = document.getElementById('env-result');
+      result.innerHTML = `
+<span class="info">API_URL:</span> ${API_URL}
+<span class="info">API_KEY:</span> ${API_KEY.substring(0, 10)}...
+
+<span class="success">✅ Variáveis configuradas!</span>
+      `;
+    };
+
+    async function makeRequest(endpoint, resultElementId) {
+      const result = document.getElementById(resultElementId);
+      result.innerHTML = '<span class="info">⏳ Carregando...</span>';
+
+      try {
+        const url = `${API_URL}${endpoint}`;
+
+        result.innerHTML += `\n\n<span class="info">📡 URL:</span> ${url}`;
+        result.innerHTML += `\n<span class="info">🔑 Headers:</span>\n  X-API-Key: ${API_KEY.substring(0, 10)}...\n  Content-Type: application/json`;
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY,
+          },
+        });
+
+        result.innerHTML += `\n\n<span class="info">📊 Status:</span> ${response.status} ${response.statusText}`;
+
+        const contentType = response.headers.get('content-type');
+        result.innerHTML += `\n<span class="info">📄 Content-Type:</span> ${contentType}`;
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          result.innerHTML += `\n\n<span class="error">❌ ERRO:</span>\n${errorText}`;
+          return;
+        }
+
+        const data = await response.json();
+        result.innerHTML += `\n\n<span class="success">✅ SUCESSO!</span>`;
+        result.innerHTML += `\n<span class="info">📦 Dados recebidos:</span>\n${JSON.stringify(data, null, 2).substring(0, 500)}...`;
+
+        if (Array.isArray(data)) {
+          result.innerHTML += `\n\n<span class="success">✅ Total de itens: ${data.length}</span>`;
+        }
+
+      } catch (error) {
+        result.innerHTML += `\n\n<span class="error">❌ ERRO CAPTURADO:</span>\n${error.message}\n\n${error.stack}`;
+      }
+    }
+
+    window.testServices = function() {
+      makeRequest('/services', 'services-result');
+    };
+
+    window.testCountries = function() {
+      makeRequest('/countries', 'countries-result');
+    };
+
+    window.testAll = function() {
+      checkEnvVars();
+      setTimeout(() => testServices(), 500);
+      setTimeout(() => testCountries(), 1000);
+    };
+
+    // Auto-executar na carga
+    window.addEventListener('load', () => {
+      console.log('🔍 Página de diagnóstico carregada');
+      console.log('API URL:', API_URL);
+      console.log('API KEY:', API_KEY.substring(0, 10) + '...');
+    });
+  </script>
+</body>
+</html>
